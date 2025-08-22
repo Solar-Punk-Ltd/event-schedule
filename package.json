@@ -31,5 +31,11 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.40.0"
+  },
+  "dependencies": {
+    "@ethersphere/bee-js": "^9.8.1",
+    "dotenv": "^17.2.1",
+    "ethers": "^6.15.0",
+    "node-schedule": "^2.1.1"
   }
 }
