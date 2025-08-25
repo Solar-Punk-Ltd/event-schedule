@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "description": "Repository for fetching the event schedule and uploading the data to Swarm.",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "build": "tsc",
     "test": "jest",
@@ -18,6 +17,7 @@
     "@eslint/js": "^9.33.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.0",
+    "@types/node-schedule": "^2.1.8",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
     "eslint": "^9.33.0",

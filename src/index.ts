@@ -1,5 +1,7 @@
+import { scheduleSessionUpdateJob } from "./jobs/devcon";
+
 const main = () => {
-  console.log("Hello from main!");
+  scheduleSessionUpdateJob();
 };
 
 main();
