@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, writeFile } from "fs/promises";
 import {
   SessionItem,
   SessionRoot,
@@ -6,28 +6,25 @@ import {
   Version,
 } from "./models";
 import {
+  DEVCON_FEED_TOPIC_PREFIX,
   getEventDatesMapping,
+  getSlotsInterval,
   OK_STATUS,
   updateFeed,
   uploadData,
 } from "../../utils";
-import {
-  DEVCON_SESSIONS_API_URL,
-  DEVCON_VERSION_API_URL,
-  FEED_TOPIC,
-  STAMP,
-} from "../../config";
+import { DEVCON_API_URL, FEED_TOPIC_SUFIX, STAMP } from "../../config";
 import { getJSON } from "../../api";
+import { dirname } from "path";
 
-const FOLDER_PATH = "/src/assets/devcon/";
+const FOLDER_PATH = "/src/assets/devcon";
 const VERSION_FILE_NAME = "version.json";
-const NEW_SESSION_FILE_PREFIX = "all_devcon_7_sessions_asc_";
-const NEW_SORTED_SESSION_FILE_PREFIX =
-  "all_devcon_7_sessions_sorted_by_day_asc_";
+const NEW_SESSION_FILE_PREFIX = "sessions_asc_";
+const NEW_SORTED_SESSION_FILE_PREFIX = "sessions_sorted_by_day_asc_";
 
-const getStoredVersion = async (): Promise<Version | null> => {
+const getStoredVersion = async (eventId: string): Promise<Version | null> => {
   let version = null;
-  const relativePath = `${FOLDER_PATH}${VERSION_FILE_NAME}`;
+  const relativePath = `${FOLDER_PATH}/${eventId}/${VERSION_FILE_NAME}`;
   const fullPath = `${process.cwd()}${relativePath}`;
 
   try {
@@ -45,6 +42,8 @@ const storeInFile = async <T>(data: T, relativePath: string) => {
   const fullPath = `${process.cwd()}${relativePath}`;
 
   try {
+    await mkdir(dirname(fullPath), { recursive: true });
+
     await writeFile(fullPath, JSON.stringify(data, null, 2));
     console.log("new data written to file: ", fullPath);
   } catch (e) {
@@ -53,18 +52,25 @@ const storeInFile = async <T>(data: T, relativePath: string) => {
   }
 };
 
-export const run = async () => {
-  const currentVersion = await getJSON<Version>(DEVCON_VERSION_API_URL);
-  const storedVersion = await getStoredVersion();
+export const run = async (eventId: string) => {
+  const currentVersion = await getJSON<Version>(
+    `${DEVCON_API_URL}/events/${eventId}/version`
+  );
+  const storedVersion = await getStoredVersion(eventId);
 
   if (
     currentVersion !== null &&
     currentVersion.status === OK_STATUS &&
     (!storedVersion || storedVersion.data !== currentVersion.data)
   ) {
-    storeInFile(currentVersion, `${FOLDER_PATH}${VERSION_FILE_NAME}`);
+    storeInFile(
+      currentVersion,
+      `${FOLDER_PATH}/${eventId}/${VERSION_FILE_NAME}`
+    );
 
-    const sessions = await getJSON<SessionRoot>(DEVCON_SESSIONS_API_URL);
+    const sessions = await getJSON<SessionRoot>(
+      `${DEVCON_API_URL}/sessions?size=600&sort=slot_start&order=asc&event=${eventId}`
+    );
 
     if (sessions === null) {
       return;
@@ -72,10 +78,19 @@ export const run = async () => {
 
     storeInFile(
       sessions,
-      `${FOLDER_PATH}${NEW_SESSION_FILE_PREFIX}${currentVersion.data}.json`
+      `${FOLDER_PATH}/${eventId}/${NEW_SESSION_FILE_PREFIX}${currentVersion.data}.json`
     );
 
-    const daysMap = getEventDatesMapping();
+    const [startDate, endDate] = getSlotsInterval(
+      sessions.data.items
+        .filter((item) => item.slot_start !== null && item.slot_end !== null)
+        .map((item) => ({
+          start: item.slot_start,
+          end: item.slot_end,
+        }))
+    );
+
+    const daysMap = getEventDatesMapping(startDate, endDate);
     const dayKeys = Array.from(daysMap.keys());
 
     const sortedSessionsMap = new Map();
@@ -117,7 +132,7 @@ export const run = async () => {
 
     storeInFile(
       data,
-      `${FOLDER_PATH}${NEW_SORTED_SESSION_FILE_PREFIX}${currentVersion.data}.json`
+      `${FOLDER_PATH}/${eventId}/${NEW_SORTED_SESSION_FILE_PREFIX}${currentVersion.data}.json`
     );
 
     const uploadReference = await uploadData(STAMP, data);
@@ -127,6 +142,10 @@ export const run = async () => {
       return null;
     }
 
-    await updateFeed(FEED_TOPIC, STAMP, uploadReference);
+    await updateFeed(
+      `${DEVCON_FEED_TOPIC_PREFIX}_${eventId}_${FEED_TOPIC_SUFIX}`,
+      STAMP,
+      uploadReference
+    );
   }
 };

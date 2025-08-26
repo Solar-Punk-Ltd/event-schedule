@@ -1,7 +1,5 @@
-import { scheduleSessionUpdateJob } from "./jobs/devcon";
+import { scheduleEventJobs } from "./jobs";
 
-const main = () => {
-  scheduleSessionUpdateJob();
-};
-
-main();
+(() => {
+  scheduleEventJobs();
+})();
