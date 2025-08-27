@@ -48,7 +48,10 @@ export interface SessionItem {
   slot_room: SessionSlotRoom;
 }
 
-export type SimplifiedSessionItem = Omit<SessionItem, "speakers">;
+export type SimplifiedSessionItem = Omit<
+  SessionItem,
+  "speakers" | "transcript_text"
+>;
 
 export interface SessionSpeaker {
   id: string;
