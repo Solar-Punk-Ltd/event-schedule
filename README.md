@@ -12,10 +12,10 @@ This project is aimed at pulling Devcon event schedule information and uploading
 
 1. **Clone the repository:**
 
-```bash
-git clone https://github.com/Solar-Punk-Ltd/event-schedule.git
-cd event-schedule
-```
+   ```bash
+   git clone https://github.com/Solar-Punk-Ltd/event-schedule.git
+   cd event-schedule
+   ```
 
 2. **Install dependencies:**
 
