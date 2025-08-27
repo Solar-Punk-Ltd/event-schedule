@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
+import path from "path";
 import {
   SessionItem,
   SessionRoot,
@@ -24,7 +25,7 @@ const NEW_SORTED_SESSION_FILE_PREFIX = "sessions_sorted_by_day_asc_";
 const getStoredVersion = async (eventId: string): Promise<Version | null> => {
   let version = null;
   const relativePath = `${FOLDER_PATH}/${eventId}/${VERSION_FILE_NAME}`;
-  const fullPath = `${process.cwd()}${relativePath}`;
+  const fullPath = path.join(process.cwd(), relativePath);
 
   try {
     const versionFileBuffer = await readFile(fullPath);
@@ -38,7 +39,7 @@ const getStoredVersion = async (eventId: string): Promise<Version | null> => {
 };
 
 const storeInFile = async <T>(data: T, relativePath: string) => {
-  const fullPath = `${process.cwd()}${relativePath}`;
+  const fullPath = path.join(process.cwd(), relativePath);
 
   try {
     await mkdir(dirname(fullPath), { recursive: true });
@@ -144,3 +145,4 @@ export const run = async (eventId: string) => {
     await updateFeed(FEED_TOPIC, STAMP, uploadReference);
   }
 };
+
