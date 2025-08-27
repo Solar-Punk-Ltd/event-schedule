@@ -48,16 +48,13 @@ export interface SessionItem {
   slot_room: SessionSlotRoom;
 }
 
-export type SimplifiedSessionItem = Omit<
-  SessionItem,
-  "speakers" | "transcript_text"
->;
+export type SimplifiedSessionItem = Omit<SessionItem, "transcript_text">;
 
 export interface SessionSpeaker {
   id: string;
   sourceId: string;
   name: string;
-  avatar: string;
+  avatar?: string;
   description: string;
   twitter: string | null;
   farcaster: string | null;
@@ -79,3 +76,4 @@ export interface SessionSlotRoom {
   youtubeStreamUrl_4: string;
   translationUrl: string;
 }
+

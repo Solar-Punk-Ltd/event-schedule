@@ -1,14 +1,13 @@
-import { Bee, Bytes, Reference } from "@ethersphere/bee-js";
+import { Bee, Reference, Topic } from "@ethersphere/bee-js";
 import { BEE_API_URL, FEED_OWNER_ADDRESS, MAINNET_PK } from "../config";
 
-export const updateFeed = async (
-  topic: string,
-  stamp: string,
-  uploadReference: Reference
+export const initFeed = async (
+  rawTopic: string,
+  stamp: string
 ): Promise<Reference | null> => {
   try {
     const bee = new Bee(BEE_API_URL);
-    const topicBytes = Bytes.keccak256(Bytes.fromUtf8(topic));
+    const topicBytes = Topic.fromString(rawTopic);
 
     const feedManifest = await bee.createFeedManifest(
       stamp,
@@ -16,10 +15,27 @@ export const updateFeed = async (
       FEED_OWNER_ADDRESS
     );
     console.log("created feed manifest", feedManifest.toHex());
-    if (!MAINNET_PK) {
-      console.log("mainnet_pk is missing");
-      return null;
-    }
+
+    return feedManifest;
+  } catch (error) {
+    console.log("error creating feed manifest", error);
+    return null;
+  }
+};
+
+export const updateFeed = async (
+  rawTopic: string,
+  stamp: string,
+  uploadReference: Reference
+): Promise<Reference | null> => {
+  if (!MAINNET_PK) {
+    console.log("mainnet_pk is missing");
+    return null;
+  }
+
+  try {
+    const bee = new Bee(BEE_API_URL);
+    const topicBytes = Topic.fromString(rawTopic);
 
     const feedWriter = bee.makeFeedWriter(topicBytes, MAINNET_PK);
     const uploadReferenceResult = await feedWriter.uploadReference(
@@ -30,7 +46,7 @@ export const updateFeed = async (
     console.log("upload reference: ", uploadReferenceResult.reference.toHex());
     return uploadReferenceResult.reference;
   } catch (error) {
-    console.log("error creating feed manifest", error);
+    console.log("error updating the feed", error);
     return null;
   }
 };
@@ -50,3 +66,4 @@ export async function uploadData(
     return null;
   }
 }
+
