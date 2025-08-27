@@ -1,16 +1,18 @@
-import { Bee, Reference } from "@ethersphere/bee-js";
+import { Bee, Bytes, Reference } from "@ethersphere/bee-js";
 import { BEE_API_URL, FEED_OWNER_ADDRESS, MAINNET_PK } from "../config";
 
 export const updateFeed = async (
   topic: string,
   stamp: string,
   uploadReference: Reference
-): Promise<string | null> => {
+): Promise<Reference | null> => {
   try {
     const bee = new Bee(BEE_API_URL);
+    const topicBytes = Bytes.keccak256(Bytes.fromUtf8(topic));
+
     const feedManifest = await bee.createFeedManifest(
       stamp,
-      topic,
+      topicBytes,
       FEED_OWNER_ADDRESS
     );
     console.log("created feed manifest", feedManifest.toHex());
@@ -19,12 +21,14 @@ export const updateFeed = async (
       return null;
     }
 
-    const feedWriter = bee.makeFeedWriter(topic, MAINNET_PK);
+    const feedWriter = bee.makeFeedWriter(topicBytes, MAINNET_PK);
     const uploadReferenceResult = await feedWriter.uploadReference(
       stamp,
       uploadReference
     );
-    return uploadReferenceResult.reference.toHex();
+
+    console.log("upload reference: ", uploadReferenceResult.reference.toHex());
+    return uploadReferenceResult.reference;
   } catch (error) {
     console.log("error creating feed manifest", error);
     return null;

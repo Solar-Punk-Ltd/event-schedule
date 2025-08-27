@@ -6,14 +6,13 @@ import {
   Version,
 } from "./models";
 import {
-  DEVCON_FEED_TOPIC_PREFIX,
   getEventDatesMapping,
   getSlotsInterval,
   OK_STATUS,
   updateFeed,
   uploadData,
 } from "../../utils";
-import { DEVCON_API_URL, FEED_TOPIC_SUFIX, STAMP } from "../../config";
+import { DEVCON_API_URL, FEED_TOPIC, STAMP } from "../../config";
 import { getJSON } from "../../api";
 import { dirname } from "path";
 
@@ -101,7 +100,7 @@ export const run = async (eventId: string) => {
 
     const items: SimplifiedSessionItem[] = sessions.data.items.map(
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      ({ speakers, ...rest }: SessionItem) => ({
+      ({ speakers, transcript_text, ...rest }: SessionItem) => ({
         ...rest,
       })
     );
@@ -135,17 +134,13 @@ export const run = async (eventId: string) => {
       `${FOLDER_PATH}/${eventId}/${NEW_SORTED_SESSION_FILE_PREFIX}${currentVersion.data}.json`
     );
 
-    const uploadReference = await uploadData(STAMP, data);
+    const uploadReference = await uploadData(STAMP, JSON.stringify(data));
 
     if (uploadReference === null) {
-      console.log("canot update feed because of invalid reference");
+      console.log("cannot update feed because of invalid reference");
       return null;
     }
 
-    await updateFeed(
-      `${DEVCON_FEED_TOPIC_PREFIX}_${eventId}_${FEED_TOPIC_SUFIX}`,
-      STAMP,
-      uploadReference
-    );
+    await updateFeed(FEED_TOPIC, STAMP, uploadReference);
   }
 };
