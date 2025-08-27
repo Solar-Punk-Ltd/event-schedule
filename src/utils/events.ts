@@ -1,9 +1,19 @@
-import { EVENT_END_DATE, EVENT_START_DATE } from "../config";
+export const getSlotsInterval = (
+  slots: Array<{ start: string; end: string }>
+): [Date, Date] => {
+  const startTimes = slots.map((s) => new Date(s.start).getTime());
+  const endTimes = slots.map((s) => new Date(s.end).getTime());
 
-export const getEventDatesMapping = () => {
-  const startDate = new Date(EVENT_START_DATE);
-  const endDate = new Date(EVENT_END_DATE);
+  const oldestStartTime = Math.min(...startTimes);
+  const latestEndTime = Math.max(...endTimes);
 
+  const startDate = new Date(oldestStartTime);
+  const endDate = new Date(latestEndTime);
+
+  return [startDate, endDate];
+};
+
+export const getEventDatesMapping = (startDate: Date, endDate: Date) => {
   const daysMap = new Map<string, string>();
   const currentDate = new Date(startDate);
   let dayCount = 1;
