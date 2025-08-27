@@ -19,23 +19,23 @@ cd event-schedule
 
 2. **Install dependencies:**
 
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
-3.  **Set up your environment variables:** Create a `.env` file in the root of the project with the variables listed in `.env.example` and assign them the required values.
+3. **Set up your environment variables:** Create a `.env` file in the root of the project with the variables listed in `.env.example` and assign them the required values.
 
-4.  **Build the code:**
+4. **Build the code:**
 
-    ```bash
-    npm run build
-    ```
+   ```bash
+   npm run build
+   ```
 
-5.  **Start the server:**
+5. **Start the server:**
 
-    ```bash
-    npm run start
-    ```
+   ```bash
+   npm run start
+   ```
 
 ## Configuration
 
