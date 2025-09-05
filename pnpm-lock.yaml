@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@ethersphere/bee-js':
-        specifier: ^9.8.1
-        version: 9.8.1
+        specifier: ^10.0.0
+        version: 10.0.0
       dotenv:
         specifier: ^17.2.1
         version: 17.2.1
@@ -298,8 +298,8 @@ packages:
     resolution: {integrity: sha512-Z5kJ+wU3oA7MMIqVR9tyZRtjYPr4OC004Q4Rw7pgOKUOKkJfZ3O24nz3WYfGRpMDNmcOi3TwQOmgm7B7Tpii0w==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@ethersphere/bee-js@9.8.1':
-    resolution: {integrity: sha512-crOjFHYPdQPG1ty2KTO5b7spIGRVb6MLucC8KOyUsPk72XYCQLf0FZl8mwKAozqZd6NLOOPZw8E/ftjoz7zYJQ==}
+  '@ethersphere/bee-js@10.0.0':
+    resolution: {integrity: sha512-udOpb05nTOWaNCGC9TNUARqkPbQNDvbtS1FKH1X15lm4bQ+yTrOn/t57TEyduPX46ol+x9zND//F7/gQXr9VBQ==}
     engines: {bee: 2.4.0-390a402e, beeApiVersion: 7.2.0}
 
   '@humanfs/core@0.19.1':
@@ -1977,18 +1977,6 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.18.3:
-    resolution: {integrity: sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: '>=5.0.2'
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
     engines: {node: '>=10'}
@@ -2274,14 +2262,14 @@ snapshots:
       '@eslint/core': 0.15.2
       levn: 0.4.1
 
-  '@ethersphere/bee-js@9.8.1':
+  '@ethersphere/bee-js@10.0.0':
     dependencies:
       axios: 0.30.1(debug@4.4.1)
       cafe-utility: 31.1.1
       debug: 4.4.1
-      isomorphic-ws: 4.0.1(ws@8.18.3)
+      isomorphic-ws: 4.0.1(ws@8.17.1)
       semver: 7.7.2
-      ws: 8.18.3
+      ws: 8.17.1
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -3370,9 +3358,9 @@ snapshots:
 
   isexe@2.0.0: {}
 
-  isomorphic-ws@4.0.1(ws@8.18.3):
+  isomorphic-ws@4.0.1(ws@8.17.1):
     dependencies:
-      ws: 8.18.3
+      ws: 8.17.1
 
   istanbul-lib-coverage@3.2.2: {}
 
@@ -4196,8 +4184,6 @@ snapshots:
       signal-exit: 4.1.0
 
   ws@8.17.1: {}
-
-  ws@8.18.3: {}
 
   y18n@5.0.8: {}
 
