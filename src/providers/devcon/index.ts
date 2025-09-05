@@ -1,31 +1,33 @@
+import { dirname, join } from "path";
+import { Reference } from "@ethersphere/bee-js";
 import { mkdir, readFile, writeFile } from "fs/promises";
-import path from "path";
 import {
-  SessionItem,
+  // SessionItem,
   SessionRoot,
-  SimplifiedSessionItem,
+  // SimplifiedSessionItem,
   Version,
 } from "./models";
 import {
   getEventDatesMapping,
   getSlotsInterval,
+  initFeed,
   OK_STATUS,
   updateFeed,
   uploadData,
 } from "../../utils";
 import { DEVCON_API_URL, FEED_TOPIC, STAMP } from "../../config";
 import { getJSON } from "../../api";
-import { dirname } from "path";
+import { AgendaSession } from "../../models";
 
 const FOLDER_PATH = "/src/assets/devcon";
 const VERSION_FILE_NAME = "version.json";
-const NEW_SESSION_FILE_PREFIX = "sessions_asc_";
 const NEW_SORTED_SESSION_FILE_PREFIX = "sessions_sorted_by_day_asc_";
+let feedManifest: Reference | null = null;
 
 const getStoredVersion = async (eventId: string): Promise<Version | null> => {
   let version = null;
   const relativePath = `${FOLDER_PATH}/${eventId}/${VERSION_FILE_NAME}`;
-  const fullPath = path.join(process.cwd(), relativePath);
+  const fullPath = join(process.cwd(), relativePath);
 
   try {
     const versionFileBuffer = await readFile(fullPath);
@@ -39,7 +41,7 @@ const getStoredVersion = async (eventId: string): Promise<Version | null> => {
 };
 
 const storeInFile = async <T>(data: T, relativePath: string) => {
-  const fullPath = path.join(process.cwd(), relativePath);
+  const fullPath = join(process.cwd(), relativePath);
 
   try {
     await mkdir(dirname(fullPath), { recursive: true });
@@ -52,37 +54,84 @@ const storeInFile = async <T>(data: T, relativePath: string) => {
   }
 };
 
+const readFromFile = async <T>(
+  relativePath: string
+): Promise<T | undefined> => {
+  const fullPath = join(process.cwd(), relativePath);
+
+  try {
+    const fileContents = await readFile(fullPath, "utf-8");
+    const data: T = JSON.parse(fileContents);
+    console.log("data read from file: ", fullPath);
+    return data;
+  } catch (e) {
+    console.log("error reading file", e);
+    return undefined;
+  }
+};
+
 export const run = async (eventId: string) => {
   const currentVersion = await getJSON<Version>(
     `${DEVCON_API_URL}/events/${eventId}/version`
   );
   const storedVersion = await getStoredVersion(eventId);
+  console.log("storedVersion: ", storedVersion);
 
   if (
     currentVersion !== null &&
-    currentVersion.status === OK_STATUS &&
-    (!storedVersion || storedVersion.data !== currentVersion.data)
+    currentVersion.status === OK_STATUS
+    //  && (!storedVersion || storedVersion.data !== currentVersion.data)
   ) {
     storeInFile(
       currentVersion,
       `${FOLDER_PATH}/${eventId}/${VERSION_FILE_NAME}`
     );
 
-    const sessions = await getJSON<SessionRoot>(
-      `${DEVCON_API_URL}/sessions?size=600&sort=slot_start&order=asc&event=${eventId}`
+    const agenda: Array<AgendaSession> | undefined = await readFromFile(
+      `${FOLDER_PATH}/${eventId}/agenda.json`
     );
 
-    if (sessions === null) {
+    const correctedAgenda = agenda!.map((a) => {
+      const startDate = new Date(a.slot_start);
+      const endDate = new Date(a.slot_end);
+      startDate.setHours(startDate.getHours() - 2);
+      endDate.setHours(endDate.getHours() - 2);
+      return {
+        ...a,
+        slot_start: startDate.toISOString(),
+        slot_end: endDate.toISOString(),
+      };
+    });
+
+    storeInFile(
+      correctedAgenda,
+      `${FOLDER_PATH}/${eventId}/agenda_corrected.json`
+    );
+
+    const getSessionsCountResponse = await getJSON<SessionRoot>(
+      `${DEVCON_API_URL}/sessions?size=0&event=${eventId}`
+    );
+
+    if (getSessionsCountResponse === null) {
+      console.log("session count retrieval failed, still using the old data");
       return;
     }
 
-    storeInFile(
-      sessions,
-      `${FOLDER_PATH}/${eventId}/${NEW_SESSION_FILE_PREFIX}${currentVersion.data}.json`
+    const sessionsCount = getSessionsCountResponse.data.total;
+
+    const sessions = await getJSON<SessionRoot>(
+      `${DEVCON_API_URL}/sessions?size=${sessionsCount}&sort=slot_start&order=asc&event=${eventId}`
     );
 
+    if (sessions === null) {
+      console.log("session retrieval failed, still using the old data");
+      return;
+    }
+
+    const items = [...correctedAgenda];
+
     const [startDate, endDate] = getSlotsInterval(
-      sessions.data.items
+      items
         .filter((item) => item.slot_start !== null && item.slot_end !== null)
         .map((item) => ({
           start: item.slot_start,
@@ -99,12 +148,15 @@ export const run = async (eventId: string) => {
       sortedSessionsMap.set(dayKey, []);
     }
 
-    const items: SimplifiedSessionItem[] = sessions.data.items.map(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      ({ speakers, transcript_text, ...rest }: SessionItem) => ({
-        ...rest,
-      })
-    );
+    // // For limiting the size of data we store, we remove the speaker avatar and session transcript.
+    // const items: SimplifiedSessionItem[] = sessions.data.items.map(
+    //   ({ speakers, transcript_text, ...restOfSession }: SessionItem) => ({
+    //     speakers: speakers.map(({ avatar, ...restOfSpeaker }) => ({
+    //       ...restOfSpeaker,
+    //     })),
+    //     ...restOfSession,
+    //   })
+    // );
 
     for (const item of items) {
       const slotStart = item.slot_start;
@@ -142,7 +194,10 @@ export const run = async (eventId: string) => {
       return null;
     }
 
+    if (feedManifest === null) {
+      feedManifest = await initFeed(FEED_TOPIC, STAMP);
+    }
+
     await updateFeed(FEED_TOPIC, STAMP, uploadReference);
   }
 };
-
