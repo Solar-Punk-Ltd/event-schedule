@@ -17,7 +17,7 @@ import {
 } from "../../utils";
 import { DEVCON_API_URL, FEED_TOPIC, STAMP } from "../../config";
 import { getJSON } from "../../api";
-import { AgendaSession } from "../../models";
+import { mapToPretalxSlot } from "./utils";
 
 const FOLDER_PATH = "/src/assets/devcon";
 const VERSION_FILE_NAME = "version.json";
@@ -54,6 +54,7 @@ const storeInFile = async <T>(data: T, relativePath: string) => {
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const readFromFile = async <T>(
   relativePath: string
 ): Promise<T | undefined> => {
@@ -79,33 +80,12 @@ export const run = async (eventId: string) => {
 
   if (
     currentVersion !== null &&
-    currentVersion.status === OK_STATUS
-    //  && (!storedVersion || storedVersion.data !== currentVersion.data)
+    currentVersion.status === OK_STATUS &&
+    (!storedVersion || storedVersion.data !== currentVersion.data)
   ) {
     storeInFile(
       currentVersion,
       `${FOLDER_PATH}/${eventId}/${VERSION_FILE_NAME}`
-    );
-
-    const agenda: Array<AgendaSession> | undefined = await readFromFile(
-      `${FOLDER_PATH}/${eventId}/agenda.json`
-    );
-
-    const correctedAgenda = agenda!.map((a) => {
-      const startDate = new Date(a.slot_start);
-      const endDate = new Date(a.slot_end);
-      startDate.setHours(startDate.getHours() - 2);
-      endDate.setHours(endDate.getHours() - 2);
-      return {
-        ...a,
-        slot_start: startDate.toISOString(),
-        slot_end: endDate.toISOString(),
-      };
-    });
-
-    storeInFile(
-      correctedAgenda,
-      `${FOLDER_PATH}/${eventId}/agenda_corrected.json`
     );
 
     const getSessionsCountResponse = await getJSON<SessionRoot>(
@@ -128,7 +108,7 @@ export const run = async (eventId: string) => {
       return;
     }
 
-    const items = [...correctedAgenda];
+    const items = [...sessions.data.items];
 
     const [startDate, endDate] = getSlotsInterval(
       items
@@ -147,16 +127,6 @@ export const run = async (eventId: string) => {
     for (const dayKey of dayKeys) {
       sortedSessionsMap.set(dayKey, []);
     }
-
-    // // For limiting the size of data we store, we remove the speaker avatar and session transcript.
-    // const items: SimplifiedSessionItem[] = sessions.data.items.map(
-    //   ({ speakers, transcript_text, ...restOfSession }: SessionItem) => ({
-    //     speakers: speakers.map(({ avatar, ...restOfSpeaker }) => ({
-    //       ...restOfSpeaker,
-    //     })),
-    //     ...restOfSession,
-    //   })
-    // );
 
     for (const item of items) {
       const slotStart = item.slot_start;
@@ -177,7 +147,9 @@ export const run = async (eventId: string) => {
         continue;
       }
 
-      sortedSessionsMap.get(dayKeys[dayIndex])?.push(item);
+      const pretalxItem = mapToPretalxSlot(item);
+
+      sortedSessionsMap.get(dayKeys[dayIndex])?.push(pretalxItem);
     }
 
     const data = Object.fromEntries(sortedSessionsMap);

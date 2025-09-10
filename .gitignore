@@ -27,4 +27,4 @@ dist-ssr
 .env
 
 # Source files
-src/assets/devcon/*/**
+src/assets
